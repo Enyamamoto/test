@@ -2,10 +2,12 @@
 session_start();
 require('database.php');
 
+//htmlspecialcharsを何度も使うので、関数にしてコードをすっきりさせる。
 function h($f){
 	return htmlspecialchars($f,ENT_QUOTES,'utf-8');
 }
 
+//postsテーブルから、URLでGET送信されてきたidを指定してデータを取得
 if(isset($_REQUEST['id'])){
 	$sql = sprintf('SELECT * FROM comments WHERE id=%d',
 		mysqli_real_escape_string($db,$_REQUEST['comment_id']));
@@ -13,8 +15,15 @@ if(isset($_REQUEST['id'])){
 	$table = mysqli_fetch_array($record);
 }
 
-//更新している
+//バリデーション
 if(!empty($_POST)){
+	if ($_POST['comment_name'] == ''){
+		$error['comment_name'] = 'blank';
+	}
+	if ($_POST['comment_name'] !== '' && strlen($_POST['comment_name']) >30){
+		$error['comment_name'] = 'length';
+	}
+
 	if ($_POST['comment_password'] == ''){
 		$error['comment_password'] = 'blank';
 	}
@@ -22,13 +31,14 @@ if(!empty($_POST)){
 	if ($_POST['comment'] == ''){
 		$error['comment'] = 'blank';
 	}
-	if ($_POST['comment'] !== '' && strlen($_POST['comment']) >400){
+	if ($_POST['comment'] !== '' && strlen($_POST['comment']) >300){
 		$error['comment'] = 'length';
 	}
 
+	//コメントを編集（アップデート）
 	if(empty($error)){
 	if(sha1($_POST['comment_password']) == $table['comment_password']){
-		$sqls = sprintf('UPDATE comments SET comment ="%s" WHERE id=%d',
+		$sqls = sprintf('UPDATE comments SET comment ="%s",modified=NOW() WHERE id=%d',
 			mysqli_real_escape_string($db,$_POST['comment']),
 			mysqli_real_escape_string($db,$_REQUEST['comment_id']));
 
@@ -50,7 +60,7 @@ if(!empty($_POST)){
 <html>
 <head>
 	<meta charset="UTF-8">
-	<title>ひとこと掲示板</title>
+	<title>Nexseed掲示板</title>
 	<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
 	<link href="bootstrap/css/bootstrap-theme.css" rel="stylesheet">
 	<link href="bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
@@ -60,11 +70,27 @@ if(!empty($_POST)){
 	<div class="container">
     <div class="row">
 	<form action="" method="post" role="form" class="col-md-9 go-right">
-		<h1>ひとこと掲示板＜コメント編集ページ＞</h1>
+		<h1>Nexseed掲示板＜コメント編集ページ＞</h1>
 		<div class="form-group">
 			<h3>★本人確認</h3>
 			<!-- dlタグは定義・説明を表す際に使用。dlで全体を囲み、dtは説明される言葉・ddは説明や定義 -->
 			<dl>
+				<dt>ニックネームを入力してください<span class="red">※必須</span></dt>
+				<dd>
+					<input id="comment_name" type="text" name="comment_name" class="form-control" value="<?php if(isset($_REQUEST['id'])){echo h($table['comment_name']);}?>">
+					<label for="comment_name">Your Nickname</label>
+					<?php if (isset($error['comment_name'])):?>
+					<p class="red">※ニックネームを入力して下さい</p>
+					<?php endif ;?>
+
+					<?php if (isset($error['comment_name'])):?>
+					<?php if($error['comment_name'] == 'length'):?>
+					<p class="red">※ニックネームは全角10文字以内にして下さい</p>
+					<?php endif;?>
+					<?php endif;?>
+				</dd>
+			</div>
+		<div class="form-group">
 				<dt>コメントパスワードを入力してください<span class="red">※必須</span></dt>
 				<dd>
 					<input id="comment_password" type="password" name="comment_password" class="form-control" value="">
@@ -110,7 +136,7 @@ if(!empty($_POST)){
 			</dl>
 		</div>
 			<div>
-				<input type="submit" value="保存する">
+				<input type="submit" class="btn btn-primary" value="保存する">
 				<a href="view2.php?id=<?php echo $_REQUEST['id'];?>">[コメント一覧へ戻る]</a>
 			</div>
 		</form>

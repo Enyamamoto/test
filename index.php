@@ -2,11 +2,12 @@
 session_start();
 require('database.php');
 
+//htmlspecialcharsを何度も使うので、関数にしてコードをすっきりさせる。
 function h($f){
 	return htmlspecialchars($f,ENT_QUOTES,'UTF-8');
 }
 
-
+//バリデーション
 if (!empty($_POST)){
 
 
@@ -50,11 +51,13 @@ if (!empty($_POST)){
 		}
 	}
 
-
+	
 	if(empty($error)){
 
+	//セッション
 	$_SESSION['name'] = $_POST['name'];
 
+	//投稿内容をインサート
 	$sql = sprintf("INSERT INTO `posts` (`name`,`message`,`password`,`created`,`modified`)VALUES ('%s','%s','%s',NOW(),NOW())",
 		mysqli_real_escape_string($db,$_POST['name']),
 		mysqli_real_escape_string($db,$_POST['message']),
@@ -70,7 +73,7 @@ if (!empty($_POST)){
 }
 
 //論理削除(del_flg = 1を非表示)
-$sqls = sprintf('SELECT p.* FROM posts p WHERE del_flg = 0 ORDER BY p.created DESC');
+$sqls = sprintf('SELECT * FROM posts WHERE del_flg = 0 ORDER BY modified DESC');
 $posts = mysqli_query($db,$sqls) or die(mysqli_error($db));
 
 
@@ -81,7 +84,7 @@ $posts = mysqli_query($db,$sqls) or die(mysqli_error($db));
 <html>
 <head>
 	<meta charset="UTF-8">
-	<title>ひとこと掲示板</title>
+	<title>Nexseed掲示板</title>
 	<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
 	<link href="bootstrap/css/bootstrap-theme.css" rel="stylesheet">
 	<link href="bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
@@ -93,7 +96,7 @@ $posts = mysqli_query($db,$sqls) or die(mysqli_error($db));
 	<div class="container">
     <div class="row">
 	<form action="" method="post" role="form" class="col-md-9 go-right">
-			<h1>ひとこと掲示板</h1>
+			<h1>Nexseed掲示板</h1>
 		<div class="form-group">
 			<dl>
 			<dt>ニックネーム(全角10文字以内)<span class="red">※必須</span></dt>
@@ -163,13 +166,10 @@ $posts = mysqli_query($db,$sqls) or die(mysqli_error($db));
 		</div>
 			<div>
 				
-				<input type="submit" value="投稿する">
+				<input type="submit" class="btn btn-primary" value="投稿する">
 				
 			</div>
-		<!-- </form>
-	</div>
-	</div> -->
-	<h2>記事一覧表示</h2>
+	<h2>記事一覧表示</h2><hr>
 	<?php while($post = mysqli_fetch_array($posts)):?>
 	<div>
 		<p>
@@ -178,8 +178,10 @@ $posts = mysqli_query($db,$sqls) or die(mysqli_error($db));
 		<p>
 		ニックネーム：<?php echo h($post['name']);?>さん
 		</p>
+		<p>更新日時：<?php echo h($post['modified']);?></p>
 		<p><a href="view2.php?id=<?php echo h($post['id']);?>">[記事詳細]</a><br><a href="update.php?id=<?php echo h($post['id']);?>">[編集]</a><br><a href="delete.php?id=<?php echo h($post['id']);?>">[削除]</a><br>
 		</p>
+		<hr style="border:dotted;color:#6495ed;">
 	</div>
 	<?php endwhile ;?>
 	</form>

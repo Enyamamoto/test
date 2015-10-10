@@ -2,10 +2,12 @@
 session_start();
 require('database.php');
 
+//htmlspecialcharsを何度も使うので、関数にしてコードをすっきりさせる。
 function h($f){
 	return htmlspecialchars($f,ENT_QUOTES,'utf-8');
 }
 
+//postsテーブルから、URLでGET送信されてきたidを指定してデータを取得
 if(isset($_REQUEST['id'])){
 	$sql = sprintf('SELECT * FROM posts WHERE id=%d',
 		mysqli_real_escape_string($db,$_REQUEST['id']));
@@ -13,7 +15,7 @@ if(isset($_REQUEST['id'])){
 	$table = mysqli_fetch_array($record);
 }
 
-//更新している
+//バリデーション
 if(!empty($_POST)){
 	if ($_POST['password'] == ''){
 		$error['password'] = 'blank';
@@ -21,9 +23,6 @@ if(!empty($_POST)){
 
 	if(empty($error)){
 	if(sha1($_POST['password']) == $table['password']){
-		// $sql = sprintf('DELETE FROM posts WHERE id=%d',
-		// mysqli_real_escape_string($db,$_GET['id']));
-		// mysqli_query($db,$sql) or die(mysqli_error($db));
 
 		//論理削除
 		$sql = sprintf('UPDATE posts SET del_flg = 1 WHERE id=%d',
@@ -45,7 +44,7 @@ if(!empty($_POST)){
 <html>
 <head>
 	<meta charset="UTF-8">
-	<title>ひとこと掲示板</title>
+	<title>Nexseed掲示板</title>
 	<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
 	<link href="bootstrap/css/bootstrap-theme.css" rel="stylesheet">
 	<link href="bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
@@ -55,7 +54,24 @@ if(!empty($_POST)){
 	<div class="container">
     <div class="row">
 	<form action="" method="post" role="form" class="col-md-9 go-right">
-		<h1>ひとこと掲示板 ＜削除ページ＞</h1>
+		<h1>Nexseed掲示板 ＜削除ページ＞</h1>
+		<div class="form-group">
+		<?php if(isset($table)):?>
+		<div>
+			<h3>★<?php echo h($table['name']);?>さんの記事を削除しますか？</h3>
+			<!-- ?res=でget送信してる -->
+			<p>
+			メッセージ：<?php echo h($table['message']) ;?>
+			</p>
+			<p>
+			ニックネーム：<?php echo h($table['name']);?>さん
+			</p>
+			<p>作成日時：<?php echo h($table['created']);?></p>
+		</div>
+		<?php else :?>
+		<p>その投稿は削除されたか、URLが間違えています</p>
+	<?php endif;?>
+	</div>
 		<div class="form-group">
 			<h3>★本人確認</h3>
 			<!-- dlタグは定義・説明を表す際に使用。dlで全体を囲み、dtは説明される言葉・ddは説明や定義 -->
@@ -82,7 +98,7 @@ if(!empty($_POST)){
 				</dd>
 			</dl>
 			<div>
-				<input type="submit" value="削除する">
+				<input type="submit" class="btn btn-primary" value="削除する">
 				<a href="index.php">[トップへ戻る]</a>
 			</div>
 		</div>

@@ -2,19 +2,18 @@
 session_start();
 require('database.php');
 
+//htmlspecialcharsを何度も使うので、関数にしてコードをすっきりさせる。
 function h($f){
 	return htmlspecialchars($f,ENT_QUOTES,'UTF-8');
 }
-//URLパラメーターのidが正しく指定されてるかチェック
-// if(empty($_REQUEST['id'])){
-// 	header('Location:view2.php');
-// 	exit();
-// }
 
+//postsテーブルから、URLでGET送信されてきたidを指定してデータを取得
 $sqls = sprintf('SELECT * FROM posts WHERE id=%d',
 	mysqli_real_escape_string($db,$_REQUEST['id']));
 $posts = mysqli_query($db,$sqls) or die(mysqli_error($db));
 
+
+//バリデーション
 if (!empty($_POST)){
 
 	if ($_POST['comment_name'] == ''){
@@ -59,8 +58,10 @@ if (!empty($_POST)){
 
 	if(empty($error)){
 
+	//セッション
 	$_SESSION['comment_name'] = $_POST['comment_name'];
 
+	//コメント内容をインサート
 	$sql = sprintf("INSERT INTO `comments` (`post_id`,`comment_name`,`comment_password`,`comment`,`created`,`modified`)VALUES ('%d','%s','%s','%s',NOW(),NOW())",
 		mysqli_real_escape_string($db,$_REQUEST['id']),
 		mysqli_real_escape_string($db,$_POST['comment_name']),
@@ -77,7 +78,7 @@ if (!empty($_POST)){
 }
 
 //論理削除(del_flg = 1を非表示)
-$sqls = sprintf('SELECT * FROM comments WHERE del_flg = 0 AND post_id = %d ORDER BY created DESC',
+$sqls = sprintf('SELECT * FROM comments WHERE del_flg = 0 AND post_id = %d ORDER BY modified DESC',
 	mysqli_real_escape_string($db,$_REQUEST['id'])
 	);
 $comments = mysqli_query($db,$sqls) or die(mysqli_error($db));
@@ -88,7 +89,7 @@ $comments = mysqli_query($db,$sqls) or die(mysqli_error($db));
 <html>
 <head>
 	<meta charset="UTF-8">
-	<title>ひとこと掲示板</title>
+	<title>Nexseed掲示板</title>
 	<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
 	<link href="bootstrap/css/bootstrap-theme.css" rel="stylesheet">
 	<link href="bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
@@ -98,16 +99,19 @@ $comments = mysqli_query($db,$sqls) or die(mysqli_error($db));
 	<div class="container">
     <div class="row">
 	<form action="" method="post" role="form" class="col-md-9 go-right">
-		<h1>ひとこと掲示板＜詳細ページ＞</h1>
+		<h1>Nexseed掲示板＜詳細ページ＞</h1>
 	<div class="form-group">
 		<?php if($post = mysqli_fetch_array($posts)):?>
 		<div>
+			<h3>★<?php echo h($post['name']);?>さんの記事</h3>
+			<!-- ?res=でget送信してる -->
 			<p>
-				<h3>★<?php echo h($post['name']);?>さんの記事</h3>
-				<!-- ?res=でget送信してる -->
-				<?php echo h($post['message']);?><span>(<?php echo h($post['name']);?>)</span>
+			メッセージ：<?php echo h($post['message']) ;?>
 			</p>
-			<p><?php echo h($post['created']);?></p>
+			<p>
+			ニックネーム：<?php echo h($post['name']);?>さん
+			</p>
+			<p>作成日時：<?php echo h($post['created']);?></p>
 		</div>
 		<?php else :?>
 		<p>その投稿は削除されたか、URLが間違えています</p>
@@ -181,7 +185,7 @@ $comments = mysqli_query($db,$sqls) or die(mysqli_error($db));
 				</dl>
 			</div>
 			<div>
-				<input type="submit" value="投稿する">
+				<input type="submit" class="btn btn-primary" value="投稿する">
 				<a href="index.php">[トップへ戻る]</a>
 			</div>
 	<h2>コメント一覧表示</h2>
@@ -193,8 +197,10 @@ $comments = mysqli_query($db,$sqls) or die(mysqli_error($db));
 		<p>
 		コメントニックネーム：<?php echo h($comment['comment_name']);?>
 		</p>
+		<p>更新日時：<?php echo h($comment['modified']);?></p>
 		<p><a href="c_update.php?id=<?php echo $_REQUEST['id'];?>&comment_id=<?php echo h($comment['id']);?>">[編集]</a><br><a href="c_delete.php?id=<?php echo $_REQUEST['id'];?>&comment_id=<?php echo h($comment['id']);?>">[削除]</a>
 		</p>
+		<hr style="border:dotted;color:#6495ed;">
 	</div>
 	<?php endwhile ;?>
 	</form>
